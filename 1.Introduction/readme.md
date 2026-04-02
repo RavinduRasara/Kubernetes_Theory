@@ -1,7 +1,7 @@
 
 &nbsp;
 
-**<img src="/1.Introduction/Images/Dropped Image.png" alt="Dropped Image.png" width="477" height="268" class="jop-noMdConv">**
+![DroppedImage.png](/1.Introduction/Images/DroppedImage.png)
 
 &nbsp;
 
