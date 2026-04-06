@@ -247,9 +247,7 @@ docker@minikube:~$
 
 ```
 
-**Application running**
-
-&nbsp;
+Application running :
 
 ```
 docker@minikube:~$ curl 10.244.0.5
@@ -495,8 +493,6 @@ nginx-deployment-77bc6bd484-pgpgd   1/1     Running   0          6m59s
 
 &nbsp;
 
-\*\*\*
-
 ```
 ravindu@Ravilinux:~$ kubectl get pods -w 
 NAME                                READY   STATUS    RESTARTS   AGE
@@ -522,7 +518,7 @@ nginx-deployment-77bc6bd484-pgpgd   1/1     Running             0          2s
 
 ```
 
-- \*\*\*\*
+&nbsp;
 
 ```
 Ravilinux:~$ kubectl delete pods nginx-deployment-77bc6bd484-bd8lb 

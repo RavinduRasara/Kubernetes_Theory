@@ -31,7 +31,7 @@ Docker Engine installation instructions: https://docs.docker.com/engine/install/
 
 ```
 
-<img src=":/9783030a203d4e2dae11381bfbb943f3" alt="6d298b3fcd1187c7662575090979bbc3.png" width="660" height="601" class="jop-noMdConv">
+<img src="/4.Minikube-Activity-1/Images/minikube.png" alt="6d298b3fcd1187c7662575090979bbc3.png" width="660" height="601" class="jop-noMdConv">
 
 ### 1.2 Checking nodes
 
