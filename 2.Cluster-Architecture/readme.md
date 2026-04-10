@@ -127,26 +127,7 @@ CLUSTER
 
 **Everything talks to the API server. Nothing talks directly to each other!**
 
-### 💡 Real Life Example
-
-Think of a **hospital reception desk:**
-
-```
-Doctor    ──→  Reception Desk  ──→  Patient Room
-Nurse     ──→  Reception Desk  ──→  Lab
-Visitor   ──→  Reception Desk  ──→  Ward
-
-Nobody walks directly into rooms!
-Everything goes through reception first!
-```
-
-Same way in K8s:
-
-```
-You (kubectl) ──→  API Server  ──→  etcd
-Scheduler     ──→  API Server  ──→  Worker Node
-Kubelet       ──→  API Server  ──→  etcd
-```
+&nbsp;
 
 ### 💡 Key Responsibilities
 
@@ -366,7 +347,7 @@ You run: kubectl get pods
 
 # 2.3 🌟 kube-scheduler
 
-**kube-scheduler** decides **WHICH worker node** a new pod should run on.
+kube-scheduler is the component that decides which worker node a new pod should be placed on
 
 > It does NOT create the pod. It just **decides the best node** for the pod to run on!
 
@@ -1168,8 +1149,6 @@ kube-controller-manager → checks 🔄
 
 > Simple one line: **"kube-proxy = network manager of each worker node"**
 
-Look at your diagram — you can see **kube-proxy inside BOTH Node 1 and Node 2!** Just like kubelet — every worker node has its own kube-proxy! ✅
-
 &nbsp;
 
 ### 💡 Why do we need kube-proxy?
@@ -1627,7 +1606,7 @@ Traffic comes in
 
 ## 2.8 CRI (Container Runtime Interface)
 
-
+* * *
 
 ### 💡Simple Explanation
 
