@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-sample-app
+  labels:
+    app: python-sample-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: python-sample-app
+  template:
+    metadata:
+      labels:
+        app: python-sample-app
+    spec:
+      containers:
+      - name: python-app
+        image: ravi943/python-sample-app-demo:v1
+        ports:
+        - containerPort: 8000
+
