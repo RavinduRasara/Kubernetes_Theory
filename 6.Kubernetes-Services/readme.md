@@ -328,8 +328,88 @@ Access application from inside cluster **(using ClusterIP service)**
 
 **127.0.0.1:33241 → tunnel → 192.168.49.2:30007 → port 80 → 10.97.46.33 (ClusterIP service) → pod**
 
+**The short version of what happened — your curl in Terminal 2 hit the tunnel at `127.0.0.1:33241`. That tunnel (kept alive by Terminal 1) forwarded the request into Docker's private network, hitting NodePort `30007` on the minikube node. From there it went to the service on port `80`, which picked one of your two Django pods on port `8000`,**
+
 **summary**:
 
 1.  Inside cluster → using **ClusterIP service** → `10.97.46.33:80`
 2.  Inside cluster → using **Pod IP directly** → `10.244.0.4:8000`
 3.  Outside cluster → using **NodePort service** → `192.168.49.2:30007` (Mac/VM) or `127.0.0.1:33241` (Linux Ubuntu with tunnel)
+
+&nbsp;
+
+* * *
+
+**Service Discovery**
+
+change service.yml file
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-django-app-service
+spec:
+  type: NodePort
+  selector:
+    app: python-sample-ap
+  ports:
+    - port: 80
+      targetPort: 8000
+      nodePort: 30007
+
+```
+
+we change "app: python-sample-app" to "app: python-sample-ap".
+
+```
+6.Kubernetes-Services$ kubectl apply -f service.yml
+service/python-django-app-service configured
+
+```
+
+now we can't access application using browser or terminal both-
+
+```
+Kubernetes-Services$ curl -L http://127.0.0.1:33677/demo/  
+curl: (56) Recv failure: Connection reset by peer
+```
+
+http://127.0.0.1:33677/demo/
+
+again we correct service.yml file
+
+```
+6.Kubernetes-Services$ kubectl apply -f service.yml
+service/python-django-app-service configured
+```
+
+now all the things work perfectly.
+
+```
+6.Kubernetes-Services$ curl -L http://127.0.0.1:33677/demo/
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CSS Template</title>
+ <article>
+    <h1>Agenda</h1>
+    <p>Learn DevOps with strong foundational knowledge and practical understanding</p>
+    <p>Please Share the Channel with your friends and colleagues</p>
+  </article>
+
+```
+
+&nbsp;
+
+* * *
+
+Load Balancing 
+
+```
+6.Kubernetes-Services$ kubectl get pods -o wide
+NAME                                 READY   STATUS    RESTARTS       AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+python-sample-app-5f95f8b87d-nglqg   1/1     Running   5 (177m ago)   26d   10.244.0.25   minikube   <none>           <none>
+python-sample-app-5f95f8b87d-srjx7   1/1     Running   5 (177m ago)   26d   10.244.0.23   minikube   <none>           <none>
+
+```
