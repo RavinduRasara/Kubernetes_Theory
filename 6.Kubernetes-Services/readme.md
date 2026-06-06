@@ -402,14 +402,117 @@ now all the things work perfectly.
 
 &nbsp;
 
+&nbsp;
+
+&nbsp;
+
+
 * * *
 
-Load Balancing 
+### **Load Balancing**
 
 ```
-6.Kubernetes-Services$ kubectl get pods -o wide
-NAME                                 READY   STATUS    RESTARTS       AGE   IP            NODE       NOMINATED NODE   READINESS GATES
-python-sample-app-5f95f8b87d-nglqg   1/1     Running   5 (177m ago)   26d   10.244.0.25   minikube   <none>           <none>
-python-sample-app-5f95f8b87d-srjx7   1/1     Running   5 (177m ago)   26d   10.244.0.23   minikube   <none>           <none>
+Ravilinux:~$ kubectl get pods -o wide
+NAME                                 READY   STATUS    RESTARTS      AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+python-sample-app-5f95f8b87d-nglqg   1/1     Running   9 (37m ago)   31d   10.244.0.49   minikube   <none>           <none>
+python-sample-app-5f95f8b87d-srjx7   1/1     Running   9 (37m ago)   31d   10.244.0.53   minikube   <none>           <none>
+
+Ravilinux:~$ kubectl get nodes
+NAME       STATUS   ROLES           AGE   VERSION
+minikube   Ready    control-plane   31d   v1.35.1
+
+Ravilinux:~$ kubectl get all
+NAME                                     READY   STATUS    RESTARTS      AGE
+pod/python-sample-app-5f95f8b87d-nglqg   1/1     Running   9 (38m ago)   31d
+pod/python-sample-app-5f95f8b87d-srjx7   1/1     Running   9 (38m ago)   31d
+
+NAME                                TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+service/kubernetes                  ClusterIP   10.96.0.1     <none>        443/TCP        31d
+service/python-django-app-service   NodePort    10.97.46.33   <none>        80:30007/TCP   31d
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/python-sample-app   2/2     2            2           31d
+
+NAME                                           DESIRED   CURRENT   READY   AGE
+replicaset.apps/python-sample-app-5f95f8b87d   2         2         2       31d
+
+Ravilinux:~$ kubectl get svc
+NAME                        TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+kubernetes                  ClusterIP   10.96.0.1     <none>        443/TCP        31d
+python-django-app-service   NodePort    10.97.46.33   <none>        80:30007/TCP   31d
 
 ```
+
+Terminal 1
+
+```
+Ravilinux:~$ minikube service python-django-app-service --url
+http://127.0.0.1:46807
+❗  Because you are using a Docker driver on linux, the terminal needs to be open to run it.
+
+
+```
+
+Terminal 2
+
+```
+Ravilinux:~$ curl -L http://127.0.0.1:46807/demo
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CSS Template</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+
+```
+
+in browser
+
+```
+http://127.0.0.1:46807/demo/
+```
+
+after Install kubeshark in laptop
+
+```
+Ravilinux:~$ kubeshark tap
+2026-06-06T19:40:21+05:30 INF versionCheck.go:23 > Checking for a newer version...
+2026-06-06T19:40:21+05:30 INF tapRunner.go:49 > Using Docker: registry=docker.io/kubeshark tag=
+2026-06-06T19:40:21+05:30 INF tapRunner.go:53 > Kubeshark will store the traffic up to a limit (per node). Oldest TCP/UDP streams will be removed once the limit is reached. limit=10Gi
+2026-06-06T19:40:21+05:30 INF common.go:69 > Using kubeconfig: path=/home/ravindu/.kube/config
+2026-06-06T19:40:21+05:30 INF tapRunner.go:69 > Telemetry enabled=true notice="Telemetry can be disabled by setting the flag: --telemetry-enabled=false"
+2026-06-06T19:40:21+05:30 INF tapRunner.go:71 > Targeting pods in: namespaces=["default","kube-node-lease","kube-public","kube-system"]
+2026-06-06T19:40:21+05:30 INF tapRunner.go:138 > Targeted pod: python-sample-app-5f95f8b87d-nglqg
+2026-06-06T19:40:21+05:30 INF tapRunner.go:138 > Targeted pod: python-sample-app-5f95f8b87d-srjx7
+2026-06-06T19:40:21+05:30 INF tapRunner.go:138 > Targeted pod: coredns-7d764666f9-fbc7q
+2026-06-06T19:40:21+05:30 INF tapRunner.go:138 > Targeted pod: coredns-7d764666f9-lcdp4
+2026-06-06T19:40:21+05:30 INF tapRunner.go:138 > Targeted pod: etcd-minikube
+2026-06-06T19:40:21+05:30 INF tapRunner.go:138 > Targeted pod: kube-apiserver-minikube
+2026-06-06T19:40:21+05:30 INF tapRunner.go:138 > Targeted pod: kube-controller-manager-minikube
+2026-06-06T19:40:21+05:30 INF tapRunner.go:138 > Targeted pod: kube-proxy-trj8w
+2026-06-06T19:40:21+05:30 INF tapRunner.go:138 > Targeted pod: kube-scheduler-minikube
+2026-06-06T19:40:21+05:30 INF tapRunner.go:138 > Targeted pod: storage-provisioner
+2026-06-06T19:40:21+05:30 INF tapRunner.go:81 > Waiting for the creation of Kubeshark resources...
+2026-06-06T19:40:22+05:30 WRN versionCheck.go:48 > There is a new release! v53.2.5 -> v53.3.0 Please upgrade to the latest release, as new releases are not always backward compatible. Run: command="sh <(curl -Ls https://kubeshark.com/install)"
+2026-06-06T19:40:25+05:30 INF helm.go:131 > Downloading Helm chart: repo-path=/home/ravindu/.cache/helm/repository url=https://github.com/kubeshark/kubeshark.github.io/releases/download/kubeshark-53.3.0/kubeshark-53.3.0.tgz
+2026-06-06T19:40:26+05:30 INF helm.go:150 > Installing using Helm: kube-version=">= 1.16.0-0" release=kubeshark source=["https://github.com/kubeshark/kubeshark/tree/master/helm-chart"] version=53.3.0
+2026-06-06T19:40:26+05:30 INF helm.go:61 > creating 21 resource(s)
+2026-06-06T19:40:27+05:30 INF tapRunner.go:98 > Installed the Helm release: kubeshark
+2026-06-06T19:40:27+05:30 INF tapRunner.go:275 > Added: pod=kubeshark-front
+2026-06-06T19:40:27+05:30 INF tapRunner.go:179 > Added: pod=kubeshark-hub
+2026-06-06T19:40:35+05:30 INF tapRunner.go:302 > Waiting for readiness... pod=kubeshark-front
+2026-06-06T19:40:37+05:30 INF tapRunner.go:299 > Ready. pod=kubeshark-front
+2026-06-06T19:40:38+05:30 INF tapRunner.go:207 > Waiting for readiness... pod=kubeshark-hub
+2026-06-06T19:40:45+05:30 INF tapRunner.go:204 > Ready. pod=kubeshark-hub
+2026-06-06T19:40:45+05:30 INF proxy.go:31 > Starting proxy... namespace=default proxy-host=127.0.0.1 service=kubeshark-front src-port=8899
+2026-06-06T19:40:45+05:30 INF tapRunner.go:438 > Kubeshark is available at: url=http://127.0.0.1:8899
+```
+
+In Browser
+
+```
+http://127.0.0.1:8899/
+```
+
+&nbsp;
