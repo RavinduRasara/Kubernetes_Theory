@@ -34,18 +34,14 @@ NAME                                 READY   STATUS    RESTARTS      AGE
 python-sample-app-5f95f8b87d-bj6nh   1/1     Running   1 (25h ago)   29h
 python-sample-app-5f95f8b87d-fqvsx   1/1     Running   1 (25h ago)   29h
 ```
-
-<details>
-<summary>Full pod details (with IP/Node) — click to expand</summary>
+```
+Ravilinux:~$ kubectl get pods -o wide
+NAME                                READY   STATUS    RESTARTS   AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+nginx-deployment-77bc6bd484-6lhkf   1/1     Running   0          17m   10.244.0.9    minikube   <none>           <none>
+nginx-deployment-77bc6bd484-n29hh   1/1     Running   0          96s   10.244.0.10   minikube   <none>           <none>
+nginx-deployment-77bc6bd484-pgpgd   1/1     Running   0          17m   10.244.0.8    minikube   <none>           <none>
 
 ```
-Kubernetes-Services$ kubectl get pods -o wide
-NAME                                 READY   STATUS    RESTARTS      AGE   IP           NODE
-python-sample-app-5f95f8b87d-bj6nh   1/1     Running   1 (25h ago)   29h   10.244.0.7   minikube
-python-sample-app-5f95f8b87d-fqvsx   1/1     Running   1 (25h ago)   29h   10.244.0.8   minikube
-```
-
-</details>
 
 **Services**
 ```
