@@ -18,17 +18,6 @@ python-sample-app-5f95f8b87d-bj6nh   1/1     Running   1 (25h ago)   29h
 python-sample-app-5f95f8b87d-fqvsx   1/1     Running   1 (25h ago)   29h
 ```
 
-<details>
-<summary>Full pod details (with IP/Node) — click to expand</summary>
-
-```
-Kubernetes-Services$ kubectl get pods -o wide
-NAME                                 READY   STATUS    RESTARTS      AGE   IP           NODE
-python-sample-app-5f95f8b87d-bj6nh   1/1     Running   1 (25h ago)   29h   10.244.0.7   minikube
-python-sample-app-5f95f8b87d-fqvsx   1/1     Running   1 (25h ago)   29h   10.244.0.8   minikube
-```
-
-</details>
 
 **Services**
 ```
