@@ -32,3 +32,17 @@ python-django-app-service   NodePort    10.99.32.95    80:30007/TCP
 Kubernetes-Services$ kubectl get deploy
 NAME                READY   UP-TO-DATE   AVAILABLE   AGE
 python-sample-app   2/2     2            2           29h
+
+**Services**
+```
+Kubernetes-Services$ kubectl get svc
+NAME                        TYPE        CLUSTER-IP     PORT(S)
+kubernetes                  ClusterIP   10.96.0.1      443/TCP
+python-django-app-service   NodePort    10.99.32.95    80:30007/TCP
+```
+
+**Deployment**
+```
+Kubernetes-Services$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+python-sample-app   2/2     2            2           29h
