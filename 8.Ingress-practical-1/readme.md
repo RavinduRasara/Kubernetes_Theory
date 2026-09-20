@@ -116,7 +116,7 @@ metadata:
   name: harry-service
 spec:
   selector:
-    app.kubernetes.io/name: harry-app 
+    app: harry-app 
   ports:
     - protocol: TCP
       port: 80
@@ -135,7 +135,7 @@ metadata:
 spec:
   rules:
   - host: harry.local
-  - http:
+    http:
       paths:
       - path: /
         pathType: Prefix
@@ -220,9 +220,72 @@ ingress-nginx-controller-596f8778bc-9tf9g   1/1     Running     0          40m
 ```
 **`-n`** means **"specify a specific namespace"**(for example, `-n ingress-nginx` tells it to look in the `ingress-nginx` namespace.not default)
 
+
 ```
-8.Ingress-practical-1$ kubectl get ing
-NAME            CLASS   HOSTS         ADDRESS        PORTS   AGE
-harry-ingress   nginx   harry.local   192.168.49.2   80      69s
+8Ingress-practical-1$ kubectl apply -f ingress.yaml
+ingress.networking.k8s.io/harry-ingress created
 ```
 
+```
+8Ingress-practical-1$ kubectl get ing
+NAME            CLASS   HOSTS         ADDRESS        PORTS   AGE
+harry-ingress   nginx   harry.local   192.168.49.2   80      69s
+
+```
+### 2.7 Checking service Endpoint and change /etc/host file 
+```
+8Ingress-practical-1$ kubectl get endpoints harry-service
+aWarning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME            ENDPOINTS                       AGE
+harry-service   10.244.0.14:80,10.244.0.15:80   2d8h
+```
+
+```
+8.Ingress-practical-1$ sudo vim /etc/hosts
+```
+Add- 
+End of section
+192.168.49.2 harry.local
+
+### 2.8 Run the application from terminal and browser
+
+In terminal 1
+```
+8.Ingress-practical-1$ minikube service ingress-nginx-controller -n ingress-nginx
+┌───────────────┬──────────────────────────┬─────────────┬───────────────────────────┐
+│   NAMESPACE   │           NAME           │ TARGET PORT │            URL            │
+├───────────────┼──────────────────────────┼─────────────┼───────────────────────────┤
+│ ingress-nginx │ ingress-nginx-controller │ http/80     │ http://192.168.49.2:31113 │
+│               │                          │ https/443   │ http://192.168.49.2:32022 │
+└───────────────┴──────────────────────────┴─────────────┴───────────────────────────┘
+🔗  Starting tunnel for service ingress-nginx-controller.
+┌───────────────┬──────────────────────────┬─────────────┬────────────────────────┐
+│   NAMESPACE   │           NAME           │ TARGET PORT │          URL           │
+├───────────────┼──────────────────────────┼─────────────┼────────────────────────┤
+│ ingress-nginx │ ingress-nginx-controller │             │ http://127.0.0.1:46439 │
+│               │                          │             │ http://127.0.0.1:46871 │
+└───────────────┴──────────────────────────┴─────────────┴────────────────────────┘
+[ingress-nginx ingress-nginx-controller  http://127.0.0.1:46439
+http://127.0.0.1:46871]
+❗  Because you are using a Docker driver on linux, the terminal needs to be open to run it.
+
+```
+
+in terminal 2
+```
+8Ingress-practical-1$ curl http://127.0.0.1:46439 -H 'host: harry.local'
+
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Hi,i am Harry Potter 1</h1>
+<h2>Hi,i am Harry Potter 2</h2>
+<h3>Hi,i am Harry Potter 3</h3>
+<h4>Hi,i am Harry Potter 4</h4>
+<h5>Hi,i am Harry Potter 5</h5>
+<h6>Ha ha ha! I am not Harry.I am Voldemort</h6>
+
+</body>
+</html>
+```

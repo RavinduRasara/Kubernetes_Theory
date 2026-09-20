@@ -5,7 +5,7 @@ metadata:
   name: harry-service
 spec:
   selector:
-    app.kubernetes.io/name: harry-app 
+    app: harry-app 
   ports:
     - protocol: TCP
       port: 80
