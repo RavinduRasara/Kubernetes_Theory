@@ -1,5 +1,3 @@
-
-
 ## 1. Write docker file and Push Docker image to Docker Hub
 
 ### 1.1 HTML File
@@ -149,6 +147,8 @@ spec:
 ⭐️ spec.rules.backend.service.name : harry-service must match with service.yaml metadata.name
  host: harry.local - Host base routing 
  remove ingress class.
+ 
+- Trying to define the traffic rules for my service.
 ### 2.4 Start minikube 
 
 ```
@@ -164,14 +164,14 @@ deployment.yaml  img  service.yaml
 ```
 
 ```
-8.Ingress-practical-1$ kubectl get svc
+8Ingress-practical-1$ kubectl get svc
 NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   14m
 
-8.Ingress-practical-1$ minikube ip
+8Ingress-practical-1$ minikube ip
 192.168.49.2
 
-8.Ingress-practical-1$ kubectl get svc
+8Ingress-practical-1$ kubectl get svc
 NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   14m
 
@@ -204,7 +204,7 @@ kubernetes      ClusterIP   10.96.0.1      <none>        443/TCP   27m
 ### 2.6  Enable the Ingress Controller
 
 ```
-8.Ingress-practical-1$ minikube addons enable ingress
+8Ingress-practical-1$ minikube addons enable ingress
 💡  ingress is an addon maintained by Kubernetes. For any concerns contact minikube on GitHub.
 You can view the list of minikube maintainers at: https://github.com/kubernetes/minikube/blob/master/OWNERS
 
@@ -212,14 +212,13 @@ You can view the list of minikube maintainers at: https://github.com/kubernetes/
 
 check Ingress Controller pods are running.
 ```
-8.Ingress-practical-1$ kubectl get pods -n ingress-nginx
+8Ingress-practical-1$ kubectl get pods -n ingress-nginx
 NAME                                        READY   STATUS      RESTARTS   AGE
 ingress-nginx-admission-create-gsr2c        0/1     Completed   0          40m
 ingress-nginx-admission-patch-n7mlj         0/1     Completed   0          40m
 ingress-nginx-controller-596f8778bc-9tf9g   1/1     Running     0          40m
 ```
 **`-n`** means **"specify a specific namespace"**(for example, `-n ingress-nginx` tells it to look in the `ingress-nginx` namespace.not default)
-
 
 ```
 8Ingress-practical-1$ kubectl apply -f ingress.yaml
@@ -230,8 +229,8 @@ ingress.networking.k8s.io/harry-ingress created
 8Ingress-practical-1$ kubectl get ing
 NAME            CLASS   HOSTS         ADDRESS        PORTS   AGE
 harry-ingress   nginx   harry.local   192.168.49.2   80      69s
-
 ```
+
 ### 2.7 Checking service Endpoint and change /etc/host file 
 ```
 8Ingress-practical-1$ kubectl get endpoints harry-service
@@ -245,35 +244,47 @@ harry-service   10.244.0.14:80,10.244.0.15:80   2d8h
 ```
 Add- 
 End of section
-192.168.49.2 harry.local
+127.0.0.1 harry.local
 
-### 2.8 Run the application from terminal and browser
+The `/etc/hosts` file is a shortcut that skips this ask-a-server step — it's a local lookup table on your own machine.
+"whenever I type `harry.local`, go to this IP."
 
-In terminal 1
-```
-8.Ingress-practical-1$ minikube service ingress-nginx-controller -n ingress-nginx
-┌───────────────┬──────────────────────────┬─────────────┬───────────────────────────┐
-│   NAMESPACE   │           NAME           │ TARGET PORT │            URL            │
-├───────────────┼──────────────────────────┼─────────────┼───────────────────────────┤
-│ ingress-nginx │ ingress-nginx-controller │ http/80     │ http://192.168.49.2:31113 │
-│               │                          │ https/443   │ http://192.168.49.2:32022 │
-└───────────────┴──────────────────────────┴─────────────┴───────────────────────────┘
-🔗  Starting tunnel for service ingress-nginx-controller.
-┌───────────────┬──────────────────────────┬─────────────┬────────────────────────┐
-│   NAMESPACE   │           NAME           │ TARGET PORT │          URL           │
-├───────────────┼──────────────────────────┼─────────────┼────────────────────────┤
-│ ingress-nginx │ ingress-nginx-controller │             │ http://127.0.0.1:46439 │
-│               │                          │             │ http://127.0.0.1:46871 │
-└───────────────┴──────────────────────────┴─────────────┴────────────────────────┘
-[ingress-nginx ingress-nginx-controller  http://127.0.0.1:46439
-http://127.0.0.1:46871]
-❗  Because you are using a Docker driver on linux, the terminal needs to be open to run it.
+### 2.8 Create minikube tunnel 
 
 ```
+8.Ingress-practical-1$ minikube tunnel
+✅  Tunnel successfully started
 
-in terminal 2
+📌  NOTE: Please do not close this terminal as this process must stay alive for the tunnel to be accessible ...
+
+❗  The service/ingress harry-ingress requires privileged ports to be exposed: [80 443]
 ```
-8Ingress-practical-1$ curl http://127.0.0.1:46439 -H 'host: harry.local'
+
+
+- **Docker Desktop**  always uses an internal VM. minikube's internal network  exists _inside_ Docker Desktop's VM. so it can't directly route to `192.168.49.2`. but Normally on **native Linux**, Docker runs directly on the Linux kernel — no VM needed.
+
+- DNS = "Domain Name System." When you type a name like `google.com` into your browser or `curl`, our  computer doesn't know how to reach a _name_ — it only knows how to reach IP addresses (like `142.250.1.1`). So it does a "DNS lookup": it asks a DNS server "what IP address does this name point to?" and gets an answer back, then connects to that IP.
+
+- By default, our  DNS server is usually your **router** (home Wi-Fi router), which forwards requests to your **ISP's DNS server**.
+
+**1. What is `/etc/hosts` and why add it?**
+
+- `/etc/hosts` is just a text file on your computer that works like a personal phone book — "this name = this IP address." When you type `harry.local` anywhere (browser, curl), your computer checks this file first before trying real DNS.
+
+- `harry.local` isn't a real internet domain, so nothing knows what it means unless you tell your computer yourself. That's why you add a line — you're saying "whenever I type `harry.local`, go to this IP."
+
+- Why `127.0.0.1` specifically (not the minikube IP)? Because `minikube tunnel` works by forwarding traffic to your own machine (`127.0.0.1` = "this same computer") and then internally routing it into the cluster. So once the tunnel is running, the correct address to point at is your own machine, not `192.168.49.2` directly.
+
+**2. Why `192.168.49.2 harry.local` didn't work for you**
+
+- This matches exactly what we found in your earlier Service tutorial session: because you have **Docker Desktop** installed, minikube's network (`192.168.49.x`) is hidden inside Docker Desktop's internal VM. Your host laptop simply cannot reach `192.168.49.2` at all — not with curl, not even with `ping`. That's why it times out.
+
+- `minikube tunnel` exists specifically to fix this — it builds a bridge so traffic sent to `127.0.0.1` on your host gets carried into that hidden network. That's why the fix is: tunnel running + `/etc/hosts` pointing to `127.0.0.1`, not the minikube IP.
+
+### 2.9 Run the application from terminal and browser
+
+```
+8.Ingress-practical-1$ curl harry.local
 
 <!DOCTYPE html>
 <html>
@@ -289,3 +300,92 @@ in terminal 2
 </body>
 </html>
 ```
+
+http://harry.local/
+
+```
+8.Ingress-practical-1$ curl 127.0.0.1 -H 'Host: harry.local'
+
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Hi,i am Harry Potter 1</h1>
+<h2>Hi,i am Harry Potter 2</h2>
+<h3>Hi,i am Harry Potter 3</h3>
+<h4>Hi,i am Harry Potter 4</h4>
+<h5>Hi,i am Harry Potter 5</h5>
+<h6>Ha ha ha! I am not Harry.I am Voldemort</h6>
+
+</body>
+</html>
+
+```
+
+**tunnel starts at your host (`127.0.0.1`) and ends at the ingress controller inside minikube's network, bypassing the unreachable middle layer (Docker Desktop's internal VM boundary).**
+
+
+                              USER
+                               │
+                               │ curl harry.local
+                               │ (via minikube tunnel → 127.0.0.1)
+                               ▼
+                    ┌───────────────────────┐
+                    │     minikube tunnel     │
+                    │  (host ↔ cluster bridge)│
+                    └───────────┬───────────┘
+                                │
+                                ▼
+        ┌───────────────────────────────────────────────┐ 
+        │                minikube cluster                 │
+        │                                                 │
+        │    ┌─────────────────────────────┐              │
+        │    │      Ingress Controller     │              │
+        │    │           (nginx)           │              │
+        │    │   matches Host: harry.local │              │
+        │    └───────────────┬─────────────┘              │
+        │                    │ port.number: 80            │
+        │                    ▼                            │
+        │    ┌─────────────────────────────┐              │
+        │    │         harry-service       │              │
+        │    │   ClusterIP  10.109.44.94:80│              │
+        │    └───────────────┬─────────────┘              │
+        │                    │ targetPort: 80             │
+        │                    ▼                            │
+        │      ┌───────────────┬───────────────┐          │
+        │      │      Pod 1       │      Pod 2            │
+        │      │ 10.244.0.24:80   │ 10.244.0.25:80        │
+        │      │ containerPort:80 │ containerPort:80      │
+        │      └───────────────┴───────────────┘          │
+        │                                                 │
+        └───────────────────────────────────────────────┘
+
+**![kubernetes-8-ingress.png](/8.Ingress-practical-1/img/kubernetes-8-ingress.png)**     **![kubenetes-8-service.yaml.png](/8.Ingress-practical-1/img/kubenetes-8-service.yaml.png)
+                        
+```
+8.Ingress-practical-1$ kubectl get svc
+NAME            TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+harry-service   ClusterIP   10.109.44.94   <none>        80/TCP    61s
+kubernetes      ClusterIP   10.96.0.1      <none>        443/TCP   27m
+```
+
+```
+8Ingress-practical-1$ kubectl get ing
+NAME            CLASS   HOSTS         ADDRESS        PORTS   AGE
+harry-ingress   nginx   harry.local   192.168.49.2   80      69s
+```
+
+
+- **`ingress.yaml` → `port.number: 80`**  
+   This tells the Ingress "send matching traffic to the Service on port 80." This number must equal the Service's `port` field (not `targetPort`). Ingress doesn't care about pods at all — it only talks to the Service.
+
+- **`service.yaml` → `port: 80`**  
+   This is the port the Service itself exposes to anything calling it (Ingress, or other pods inside the cluster). This is the number that shows up in `kubectl get svc` as `80/TCP`.
+
+- **`service.yaml` → `targetPort: 80`**  
+   This is the port the Service forwards traffic _to_ on the pod. It must equal the pod's actual listening port.
+
+- **`deployment.yaml` → `containerPort: 80`**  
+  This is just documentation of which port your app inside the container is actually listening on (your HTML/app process itself). `targetPort` must match this number, or requests will reach the pod but get refused/dropped since nothing's listening there.
+
+
