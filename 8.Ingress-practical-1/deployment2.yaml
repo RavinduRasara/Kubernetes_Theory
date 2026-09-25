@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: middle-earth-deployment
+  labels:
+    app: middle-earth-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: middle-earth-app
+  template:
+    metadata:
+      labels:
+        app: middle-earth-app
+    spec:
+      containers:
+      - name: middle-earth
+        image: ravi943/middle-earth:1.0
+        ports:
+        - containerPort: 80

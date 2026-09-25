@@ -389,3 +389,132 @@ harry-ingress   nginx   harry.local   192.168.49.2   80      69s
   This is just documentation of which port your app inside the container is actually listening on (your HTML/app process itself). `targetPort` must match this number, or requests will reach the pod but get refused/dropped since nothing's listening there.
 
 
+
+---
+
+## 3.Path base routing
+
+```
+8.Ingress-practical-1$ ls
+deployment1.yaml  deployment2.yaml  deployment.yaml  img  ingress1.yaml  ingress.yaml  pathbase-ingress.yaml  readme.md  service1.yaml  service2.yaml  service.yaml
+```
+ 
+deployment1.yaml
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harry-deployment
+  labels:
+    app: harry-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: harry-app
+  template:
+    metadata:
+      labels:
+        app: harry-app
+    spec:
+      containers:
+      - name: harry-container
+        image: ravi943/harry-app:1.0
+        ports:
+        - containerPort: 80
+```
+
+service1.yaml
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: harry-service
+spec:
+  selector:
+    app: harry-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+```
+
+deployment2.yaml
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: middle-earth-deployment
+  labels:
+    app: middle-earth-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: middle-earth-app
+  template:
+    metadata:
+      labels:
+        app: middle-earth-app
+    spec:
+      containers:
+      - name: middle-earth
+        image: ravi943/middle-earth:1.0
+        ports:
+        - containerPort: 80
+```
+
+service2.yaml
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: middle-earth-service
+spec:
+  selector:
+    app: middle-earth-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+```
+
+ingress1.yaml
+
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-with-auth
+spec:
+  rules:
+  - host: harry.middle.earth
+    http:
+      paths:
+      - path: /first
+        pathType: Prefix
+        backend:
+          service:
+            name: harry-service
+            port:
+              number: 80
+      - path: /second
+        pathType: Prefix
+        backend:
+          service:
+            name: middle-earth-service
+            port:
+              number: 80
+```
+
+```
+8.Ingress-practical-1$ sudo vim /etc/hosts
+[sudo] password for ravindu: 
+```
+
+ End of section
+127.0.0.1 harry.middle.earth

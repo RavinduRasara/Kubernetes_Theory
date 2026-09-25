@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harry-deployment
+  labels:
+    app: harry-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: harry-app
+  template:
+    metadata:
+      labels:
+        app: harry-app
+    spec:
+      containers:
+      - name: harry-container
+        image: ravi943/harry-app:1.0
+        ports:
+        - containerPort: 80
