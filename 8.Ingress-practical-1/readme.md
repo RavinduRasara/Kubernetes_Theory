@@ -394,54 +394,112 @@ harry-ingress   nginx   harry.local   192.168.49.2   80      69s
 
 ## 3.Path base routing
 
+
+**Application 1**
+```
+<!DOCTYPE html>
+
+<html>
+<body>
+
+<h1>Hi,i am Harry Potter 1</h1>
+<h2>Hi,i am Harry Potter 2</h2>
+<h3>Hi,i am Harry Potter 3</h3>
+<h4>Hi,i am Harry Potter 4</h4>
+<h5>Hi,i am Harry Potter 5</h5>
+<h6>Ha ha ha! I am not Harry.I am Voldemort</h6>
+
+</body>
+</html>
+```
+
+**Dockerfile 1**
+```
+FROM nginx:alpine
+WORKDIR /usr/share/nginx/html/first
+COPY index.html .
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+**/first
+
+**Application 2**
+```
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1> The Lord of the Rings</h1>
+<h2>Hi,i am Aragorn</h2>
+<h3>Hi,i am Gandalf</h3>
+<h4>Hi,i am Bilbo Baggins</h4>
+<h5>Hi,i am Frodo Baggins</h5>
+<h6>Ha ha ha! I am not Gandalf.I am Sauron</h6>
+
+</body>
+</html>
+```
+
+**Dockerfile 2**
+```
+FROM nginx:alpine
+WORKDIR /usr/share/nginx/html/second
+COPY index.html .
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+**/second
+
+### 3.1 create deployment(2), service(2), ingress(1) yaml file
+
 ```
 8.Ingress-practical-1$ ls
 deployment1.yaml  deployment2.yaml  deployment.yaml  img  ingress1.yaml  ingress.yaml  pathbase-ingress.yaml  readme.md  service1.yaml  service2.yaml  service.yaml
 ```
  
-deployment1.yaml
+**deployment1.yaml**
 
 ```
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: harry-deployment
+  name: hogwarts-deployment
   labels:
-    app: harry-app
+    app: hogwarts-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: harry-app
+      app: hogwarts-app
   template:
     metadata:
       labels:
-        app: harry-app
+        app: hogwarts-app
     spec:
       containers:
-      - name: harry-container
-        image: ravi943/harry-app:1.0
+      - name: hogwarts-container
+        image: ravi943/hogwarts:1.0
         ports:
         - containerPort: 80
 ```
 
-service1.yaml
+**service1.yaml**
 
 ```
 apiVersion: v1
 kind: Service
 metadata:
-  name: harry-service
+  name: hogwarts-service
 spec:
   selector:
-    app: harry-app
+    app: hogwarts-app
   ports:
     - protocol: TCP
       port: 80
       targetPort: 80
 ```
 
-deployment2.yaml
+**deployment2.yaml**
 
 ```
 apiVersion: apps/v1
@@ -461,13 +519,13 @@ spec:
         app: middle-earth-app
     spec:
       containers:
-      - name: middle-earth
+      - name: middle-earth-container
         image: ravi943/middle-earth:1.0
         ports:
         - containerPort: 80
 ```
 
-service2.yaml
+**service2.yaml**
 
 ```
 apiVersion: v1
@@ -483,7 +541,7 @@ spec:
       targetPort: 80
 ```
 
-ingress1.yaml
+**ingress1.yaml**
 
 ```
 apiVersion: networking.k8s.io/v1
@@ -492,14 +550,14 @@ metadata:
   name: ingress-with-auth
 spec:
   rules:
-  - host: harry.middle.earth
+  - host: hogwarts.middle.earth
     http:
       paths:
       - path: /first
         pathType: Prefix
         backend:
           service:
-            name: harry-service
+            name: hogwarts-service
             port:
               number: 80
       - path: /second
@@ -517,4 +575,116 @@ spec:
 ```
 
  End of section
-127.0.0.1 harry.middle.earth
+127.0.0.1 hogwarts.middle.earth
+
+### 3.2 Apply deployment, service, ingress yaml file
+
+```
+8.Ingress-practical-1$ kubectl apply -f deployment1.yaml -f service1.yaml -f deployment2.yaml -f service2.yaml -f ingress1.yaml
+deployment.apps/hogwarts-deployment created
+service/hogwarts-service created
+deployment.apps/middle-earth-deployment created
+service/middle-earth-service created
+ingress.networking.k8s.io/ingress-with-auth created
+```
+
+### 3.3 Create minikube tunnel
+
+```
+8.Ingress-practical-1$ minikube tunnel
+✅  Tunnel successfully started
+
+📌  NOTE: Please do not close this terminal as this process must stay alive for the tunnel to be accessible ...
+
+❗  The service/ingress ingress-with-auth requires privileged ports to be exposed: [80 443]
+
+```
+
+### 3.4 Run application from terminal and browser
+
+```
+8.Ingress-practical-1$ curl -L hogwarts.middle.earth/first
+
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Hi,i am Harry Potter 1</h1>
+<h2>Hi,i am Harry Potter 2</h2>
+<h3>Hi,i am Harry Potter 3</h3>
+<h4>Hi,i am Harry Potter 4</h4>
+<h5>Hi,i am Harry Potter 5</h5>
+<h6>Ha ha ha! I am not Harry.I am Voldemort</h6>
+
+</body>
+```
+
+```
+8.Ingress-practical-1$ curl -L hogwarts.middle.earth/second
+
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1> The Lord of the Rings</h1>
+<h2>Hi,i am Aragorn</h2>
+<h3>Hi,i am Gandalf</h3>
+<h4>Hi,i am Bilbo Baggins</h4>
+<h5>Hi,i am Frodo Baggins</h5>
+<h6>Ha ha ha! I am not Gandalf.I am Sauron</h6>
+
+</body>
+```
+
+Browser
+```
+http://hogwarts.middle.earth/first/
+```
+
+```
+http://hogwarts.middle.earth/second/
+```
+
+### 3.5 Note
+
+To check end point
+```
+8.Ingress-practical-1$ kubectl get endpoints hogwarts-service 
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME               ENDPOINTS        AGE
+hogwarts-service   10.244.0.46:80   40m
+
+
+8.Ingress-practical-1$ kubectl get endpoints middle-earth-service
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME                   ENDPOINTS        AGE
+middle-earth-service   10.244.0.47:80   42m
+
+```
+
+
+To manually clear minikube's cached copy
+```
+8.Ingress-practical-1$ minikube image rm ravi943/middle-earth:1.0
+```
+
+To list all images minikube's node has cached
+```
+8.Ingress-practical-1$ minikube image ls
+
+registry.k8s.io/pause:3.10.1
+registry.k8s.io/kube-scheduler:v1.35.1
+registry.k8s.io/kube-proxy:v1.35.1
+registry.k8s.io/kube-controller-manager:v1.35.1
+registry.k8s.io/kube-apiserver:v1.35.1
+registry.k8s.io/etcd:3.6.6-0
+registry.k8s.io/coredns/coredns:v1.13.1
+gcr.io/k8s-minikube/storage-provisioner:v5
+docker.io/ravi943/hogwarts:1.0
+docker.io/ravi943/harry-app:1.0
+```
+
+To search for a specific one:
+```
+8.Ingress-practical-1$ minikube image ls | grep middle-earth
+```

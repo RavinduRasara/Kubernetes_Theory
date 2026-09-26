@@ -15,7 +15,7 @@ spec:
         app: middle-earth-app
     spec:
       containers:
-      - name: middle-earth
+      - name: middle-earth-container
         image: ravi943/middle-earth:1.0
         ports:
         - containerPort: 80

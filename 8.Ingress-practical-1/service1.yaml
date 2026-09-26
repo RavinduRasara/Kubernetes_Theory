@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: harry-service
+  name: hogwarts-service
 spec:
   selector:
-    app: harry-app
+    app: hogwarts-app
   ports:
     - protocol: TCP
       port: 80

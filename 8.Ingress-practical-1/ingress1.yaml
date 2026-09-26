@@ -4,14 +4,14 @@ metadata:
   name: ingress-with-auth
 spec:
   rules:
-  - host: harry.middle.earth
+  - host: hogwarts.middle.earth
     http:
       paths:
       - path: /first
         pathType: Prefix
         backend:
           service:
-            name: harry-service
+            name: hogwarts-service
             port:
               number: 80
       - path: /second
