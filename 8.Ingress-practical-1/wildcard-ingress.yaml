@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wildcard-ingress
+spec:
+  rules:
+  - host: "*.middle.earth"
+    http:
+      paths:
+      - path: /first/
+        pathType: Prefix
+        backend:
+          service:
+            name: hogwarts-service
+            port:
+              number: 80

@@ -688,3 +688,201 @@ To search for a specific one:
 ```
 8.Ingress-practical-1$ minikube image ls | grep middle-earth
 ```
+
+```
+8.Ingress-practical-1$ kubectl get all
+NAME                                           READY   STATUS    RESTARTS      AGE
+pod/hogwarts-deployment-6d9f7fd957-7gwm7       1/1     Running   2 (22h ago)   3d21h
+pod/middle-earth-deployment-5568c86c74-2lpx7   1/1     Running   2 (22h ago)   3d19h
+
+NAME                           TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+service/hogwarts-service       ClusterIP   10.108.222.108   <none>        80/TCP    3d21h
+service/kubernetes             ClusterIP   10.96.0.1        <none>        443/TCP   12d
+service/middle-earth-service   ClusterIP   10.98.183.113    <none>        80/TCP    3d21h
+
+NAME                                      READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/hogwarts-deployment       1/1     1            1           3d21h
+deployment.apps/middle-earth-deployment   1/1     1            1           3d19h
+
+NAME                                                 DESIRED   CURRENT   READY   AGE
+replicaset.apps/hogwarts-deployment-6d9f7fd957       1         1         1       3d21h
+replicaset.apps/middle-earth-deployment-5568c86c74   1         1         1       3d19h
+```
+
+```
+8.Ingress-practical-1$ kubectl get namespaces
+NAME              STATUS   AGE
+default           Active   12d
+ingress-nginx     Active   11d
+kube-node-lease   Active   12d
+kube-public       Active   12d
+kube-system       Active   12d
+
+r8.Ingress-practical-1$ kubectl get pods -n ingress-nginx
+NAME                                        READY   STATUS      RESTARTS       AGE
+ingress-nginx-admission-create-gsr2c        0/1     Completed   0              11d
+ingress-nginx-admission-patch-n7mlj         0/1     Completed   0              11d
+ingress-nginx-controller-596f8778bc-9tf9g   1/1     Running     9 (128m ago)   11d
+```
+
+
+This command reaches into the running ingress-controller pod and prints out nginx's actual live configuration file
+```
+kubectl exec -it -n ingress-nginx deploy/ingress-nginx-controller cat /etc/nginx/nginx.conf
+```
+kubectl exec - runs a command _inside_ an already-running container
+**`-it`** — two combined flags:
+- `-i` (interactive) — keeps input open so you could type things
+- `-t` (tty) — allocates a terminal, so output looks nice/formatted like a real terminal session
+- **`deploy/ingress-nginx-controller`** —  this says "target the pod managed by this Deployment"
+
+### 3.6 wildcard with ingress
+
+A wildcard host uses `*` to match **any subdomain** in that position. So:
+```
+host: "*.bar.com"
+```
+This single rule matches `foo.bar.com`, `test.bar.com`, `anything.bar.com` — literally any subdomain of `bar.com` — all routed to the **same** backend service (`http-svc`), without needing a separate rule for each one.
+That's the whole point: instead of writing 10 separate `host:` rules for 10 subdomains, one wildcard rule covers all of them.
+
+```
+8.Ingress-practical-1$ ls
+deployment1.yaml  deployment2.yaml  deployment.yaml  harry-app  img  ingress1.yaml  ingress.yaml  middle-earth  pathbase-ingress.yaml  readme.md  service1.yaml  service2.yaml  service.yaml
+```
+
+```
+vim wildcard-ingress.yaml
+```
+Option 1
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wildcard-ingress
+spec:
+  rules:
+  - host: "*.middle.earth"
+    http:
+      paths:
+      - path: /first/
+        pathType: Prefix
+        backend:
+          service:
+            name: hogwarts-service
+            port:
+              number: 80
+```
+
+OR
+
+Option 2
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wildcard-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /first/
+spec:
+  rules:
+  - host: "*.middle.earth"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: hogwarts-service
+            port:
+              number: 80
+```
+
+- **`nginx.ingress.kubernetes.io/rewrite-target: /first/`** — tells the ingress controller: _"Before forwarding any matched request to the backend service, replace the path with `/first/` instead of whatever the client actually requested."
+- Client requests `test1.middle.earth/` → ingress matches the wildcard rule → **before** sending to `hogwarts-service`, it rewrites the path to `/first/` → pod receives a request for `/first/` → finds your `index.html` there → returns it successfully.
+
+```
+8.Ingress-practical-1$ kubectl apply -f wildcard-ingress.yaml
+ingress.networking.k8s.io/wildcard-ingress created
+```
+
+```
+8.Ingress-practical-1$ kubectl get ing
+NAME                CLASS   HOSTS                   ADDRESS        PORTS   AGE
+ingress-with-auth   nginx   hogwarts.middle.earth   192.168.49.2   80      3d23h
+wildcard-ingress    nginx   *.middle.earth          192.168.49.2   80      30s
+
+```
+
+For option 1
+```
+8.Ingress-practical-1$ curl test1.middle.earth/first/
+
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Hi,i am Harry Potter 1</h1>
+<h2>Hi,i am Harry Potter 2</h2>
+<h3>Hi,i am Harry Potter 3</h3>
+<h4>Hi,i am Harry Potter 4</h4>
+<h5>Hi,i am Harry Potter 5</h5>
+<h6>Ha ha ha! I am not Harry.I am Voldemort</h6>
+
+</body>
+```
+http://test1.middle.earth/first/
+```
+8.Ingress-practical-1$ curl test2.middle.earth/first/
+
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Hi,i am Harry Potter 1</h1>
+<h2>Hi,i am Harry Potter 2</h2>
+<h3>Hi,i am Harry Potter 3</h3>
+<h4>Hi,i am Harry Potter 4</h4>
+<h5>Hi,i am Harry Potter 5</h5>
+<h6>Ha ha ha! I am not Harry.I am Voldemort</h6>
+
+</body>
+```
+
+
+For option 2
+```
+8.Ingress-practical-1$ curl test1.middle.earth/
+
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Hi,i am Harry Potter 1</h1>
+<h2>Hi,i am Harry Potter 2</h2>
+<h3>Hi,i am Harry Potter 3</h3>
+<h4>Hi,i am Harry Potter 4</h4>
+<h5>Hi,i am Harry Potter 5</h5>
+<h6>Ha ha ha! I am not Harry.I am Voldemort</h6>
+
+</body>
+```
+
+```
+8.Ingress-practical-1$ curl test2.middle.earth/
+
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Hi,i am Harry Potter 1</h1>
+<h2>Hi,i am Harry Potter 2</h2>
+<h3>Hi,i am Harry Potter 3</h3>
+<h4>Hi,i am Harry Potter 4</h4>
+<h5>Hi,i am Harry Potter 5</h5>
+<h6>Ha ha ha! I am not Harry.I am Voldemort</h6>
+
+</body>
+```
+
+
+---
