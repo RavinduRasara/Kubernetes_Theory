@@ -884,5 +884,131 @@ For option 2
 </body>
 ```
 
+---
+## 3.7 TLS
+
+**TLS (Transport Layer Security)** is the technology that **locks (encrypts) data** while it travels over the internet, so nobody in the middle can read it.
+
+- **SSL** is the old name. TLS is the newer, safer version. People still say "SSL" out of habit, so "SSL passthrough" and "TLS passthrough" mean the same thing.
+
+- **HTTPS = HTTP + TLS.** The padlock in your browser means TLS is working.
+
+### 3.7.1 SSL Passthrough
+
+The load balancer receives the encrypted HTTPS traffic and **forwards it without decrypting it**. 
+It acts as a simple relay and never reads the content. The **backend app** does the decryption
+
+```
+Client ──encrypted──▶ Load Balancer ──encrypted──▶ App (decrypts here)
+                      (just forwards)
+```
+
+**Advantages**
+
+- **End-to-end encryption.** Traffic is never decrypted in the middle.
+- **Better for strict security or compliance** rules.
+- **Supports mutual TLS** (client certificates checked by the app itself).
+- **The private key stays on the app**, not on the load balancer.
+
+**Disadvantages**
+
+- **No WAF**, so attacks pass straight to the app.
+- **No path-based or session-based routing.**
+- **No header changes or traffic inspection.**
+- **The app needs to manage its own certificate.**
+- **More CPU on the backend pods**, because each pod must decrypt.
+
+### 3.7.2 SSL offloading
+
+**SSL offloading** means the load balancer **decrypts the HTTPS traffic** and then sends **plain HTTP** to the app
+
+```
+Client ──HTTPS (encrypted)──▶ Load Balancer ──HTTP (not encrypted)──▶ App
+                              (decrypts here)
+```
+
+**Advantages**
+
+- It can read the traffic, so a WAF can check and block attacks
+- It can see the path, so `/api` and `/shop` go to different services (path-base routing)
+- It can read cookies, so the same user can go to the same  (session/cookie routing)
+- **Decryption happens once** at the load balancer, so the pods are lighter
+- faster. application latency can be reduce.
+
+**Disadvantage of offloading**
+
+- Traffic from the load balancer to the app is **not encrypted**. Inside a trusted cluster this is usually acceptable, but strict security rules may not allow it.
+- The load balancer holds the private key, so it becomes an important thing to protect.
+
+### 3.7.3 SSL Bridging
+
+```
+Client ──HTTPS──▶ Load Balancer ──HTTPS (new encryption)──▶ App
+                  (decrypt → inspect → encrypt again)
+```
+
+**SSL bridging** means the load balancer **decrypts** the HTTPS traffic, reads and checks it, and then **encrypts it again** before sending it to the app.
+
+ **Advantages**
+
+- WAF, path routing, and session routing all work.
+- Traffic is **encrypted on both sides**, so it is safe even inside the cluster.
+- Good for strict security and compliance rules.
+
+**Disadvantages**
+
+- **Most CPU use**, because decrypt and encrypt both happen.
+- **More certificates to manage** (load balancer and app).
+- Slightly more delay and more complex setup.
+
+Bridging gives you **both**: full load balancer features and end-to-end encryption
+
+|                     | SSL Passthrough                                                  | SSL Offloading / Termination                              | SSL Bridge / Re-encrypt                                        |
+| ------------------- | ---------------------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
+| Processing          | Costly in processing for server                                  | Fast in processing                                        | Costly in processing for server                                |
+| Security            | Secure in many cases                                             | less secure                                               | Secure                                                         |
+| Load balancing type | L4 (TCP) load balancing                                          | L7 load balancing                                         | L7 load balancing                                              |
+| When to choose      | When you don't bother about access rules, blocking, cookies etc. | When you want less latency and can compromise on security | When you need security and advanced load balancer capabilities |
+| Inspection          | No load balancer inspection                                      | Load balancer inspects the packets                        | Load balancer inspects the packets                             |
+| Recommended?        | Recommended*                                                     | Highly unrecommended                                      | Recommended                                                    |
+
+### 3.7.4 what is certificate?
+
+A **certificate** is a digital ID card for a website. It proves "this server really is `myapp.com`", and it carries the **public key** used to start the encrypted connection.
+
+- It is issued by a trusted authority (for example Let's Encrypt). That authority is called a **CA (Certificate Authority)**.
+- It comes with a **private key**, which stays secret on the server. The certificate is public, but the private key must never be shared.
+- It **expires**, so it must be renewed.
+
+Real-life example: a certificate is like a **passport**. A trusted government (the CA) issues it, and others trust it because of that.
+In Kubernetes, the certificate and private key are stored in a **Secret** (type `kubernetes.io/tls`), and the Ingress uses it.
+
+### 3.7.5  What is TCP, L4, and L7?
+
+TCP is the basic way two computers send data to each other reliably. It only moves the data. It does not understand what the data means. Think of it as a road.
+
+Networks are described in layers (the OSI model). You only need two:
+
+|              | **L4 (Layer 4)**                                       | L7 (Layer 7)                                   |
+| ------------ | ------------------------------------------------------ | ---------------------------------------------- |
+| Layer name   | Transport (TCP)                                        | Application (HTTP)                             |
+| What it sees | IP address and port only                               | Full request: path, cookies, headers, hostname |
+| Example      | Postman who reads only the **address** on the envelope | Postman who **opens the letter** and reads it  |
+| Can do       | Simple forwarding                                      | Path routing, WAF, session routing             |
+| Speed        | Faster, simpler                                        | Slower, smarter                                |
+
+So in your table:
+
+Passthrough = L4, because it cannot read the encrypted content. It only forwards TCP.
+Offloading and Bridging = L7, because they decrypt the traffic, so they can read the HTTP request.
+
 
 ---
+
+### What is OpenShift?
+
+**OpenShift** is Red Hat's version of Kubernetes. It is Kubernetes plus extra features (a web console, stricter security, built-in tools). Companies often use it in production.
+
+### What is a Route?
+
+A **Route** is OpenShift's own way to expose an app to the outside, like Ingress in plain Kubernetes. In fact, Routes existed before Ingress. OpenShift's built-in router (based on HAProxy) is the "ingress controller" that reads Routes.
