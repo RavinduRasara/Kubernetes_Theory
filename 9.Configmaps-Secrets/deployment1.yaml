@@ -18,14 +18,15 @@ spec:
       containers:
       - name: harry-container
         image: ravi943/harry-app:1.0
-        env:
-         - name: DB-PORT
-           valueFrom:
-            configMapKeyRef:
-             name: test-cm
-             key: db-port
+        volumeMounts:
+          - name: db-connection
+            mountPath: /opt
         ports:
         - containerPort: 80
+      volumes:
+        - name: db-connection
+          configMap:
+            name: test-cm
 
 
         
