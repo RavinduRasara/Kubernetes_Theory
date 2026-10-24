@@ -239,4 +239,4 @@ Decode:
 9.Configmaps-Secrets$ echo MzMwNg== | base64 --decode
 3306
 ```
-in default, kubenetes does not have a good security
+default, kubenetes does not have a good security
